@@ -4,31 +4,16 @@
   "description": "Text (string) processing stuff",
   "main": "./lib/main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node lib/tests.js"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/loveencounterflow/coffeenode-text"
-  },
+  "repository": "",
   "dependencies": {
-    "coffee-script": "~1.6.2",
+    "coffee-script": "~1.7.1",
     "coffeenode-types": "~0.1.0",
     "coffeenode-trm": "~0.1.6"
   },
-  "larq": {
-    "extensions": {
-      ".coffee": "coffee-script"
-    },
-    "compile-statements": {},
-    "%cache": {
-      "routes": {
-        "lib/main.js": 1
-      }
-    }
-  },
-  "repository": "",
   "author": "",
   "license": "BSD",
   "readme": "ERROR: No README data found!",
-  "_id": "coffeenode-text@0.1.0"
+  "_id": "coffeenode-text@0.1.1"
 }

@@ -25,7 +25,7 @@ log                       = TRM.log.bind TRM
   return me
 
 #-----------------------------------------------------------------------------------------------------------
-@starts_with = ( me, probe ) ->
+@starts_with = ( me, probe, idx = 0 ) ->
   # thx to Mark Byers via http://stackoverflow.com/questions/646628/javascript-startswith/4579228#4579228
   return ( me.lastIndexOf probe, idx ) is idx
 
@@ -152,13 +152,13 @@ log                       = TRM.log.bind TRM
 #     validate_isa_nonnegative_integer start
 #     #.........................................................................................................
 #     unless start < me.length
-#       bye "index error: text has last character at index #{rpr me.length - 1}, got index #{rpr start}"
+#       throw new Error "index error: text has last character at index #{rpr me.length - 1}, got index #{rpr start}"
 #     #.........................................................................................................
 #     R = me.substring start
 #     #.........................................................................................................
 #     if rests?
 #       validate_isa_list rests
-#       unless rests.length == 0 then bye ###expected an empty list,
+#       unless rests.length == 0 then throw new Error ###expected an empty list,
 #         got one with #{rpr rests.length} elements.###
 #       rests.push me.substring 0, start
 #       rests.push ''
@@ -182,7 +182,7 @@ log                       = TRM.log.bind TRM
   clipping of text is ever done.###
   #.........................................................................................................
   unless align == 'left' or align == 'right'
-    bye "expected ``left`` or ``right`` for ``align``, got #{rpr align}"
+    throw new Error "expected ``left`` or ``right`` for ``align``, got #{rpr align}"
   #.........................................................................................................
   x                 = rpr x unless TYPES.isa_text x
   filler_length     = filler.length
@@ -213,8 +213,6 @@ log                       = TRM.log.bind TRM
 #   return me.replace probe, replacement
 
 #-----------------------------------------------------------------------------------------------------------
-### TAINT  might not recognize all Unicode line-endings
-###
 @lines_of = ( me, handler ) ->
   ###Given a text and an optional handler, either return a list of lines (without line endings) if handler
   is not given, or call handler as `handler error, line` for each line in the text, and one more call where
@@ -224,8 +222,12 @@ log                       = TRM.log.bind TRM
 
   **Implementation Note**: Implementation of asynchronous version postponed.###
   #.........................................................................................................
-  return me.split /// \r\n | \n | \r ///g unless handler?
+  return me.split @_line_splitter unless handler?
   throw new Error "asynchronous TEXT.lines_of not yet supported"
+
+#-----------------------------------------------------------------------------------------------------------
+@_line_splitter = /// \r\n | [\n\v\f\r\x85\u2028\u2029] ///g
+
 
 #-----------------------------------------------------------------------------------------------------------
 # @chrs_of = ( me, handler = null ) ->
