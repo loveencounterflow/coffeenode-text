@@ -6,7 +6,10 @@
   "scripts": {
     "test": "node lib/tests.js"
   },
-  "repository": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wolfganggzde/gemini.git"
+  },
   "dependencies": {
     "coffee-script": "~1.7.1",
     "coffeenode-types": "~0.1.0",
