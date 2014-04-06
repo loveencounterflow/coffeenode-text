@@ -330,5 +330,76 @@ log                       = TRM.log.bind TRM
   unless ( me.match /^\S+$/ )? then throw new Error "expected a non-empty text without whitespace"
 
 
+#===========================================================================================================
+# STRING INTERPOLATION
+#-----------------------------------------------------------------------------------------------------------
+_fill_in_get_method = ( matcher ) ->
+  return ( template, data, formats ) ->
+    return template.replace matcher, ( $0, $1, $2, $3 ) =>
+      expression  = $2 ? $3
+      #.......................................................................................................
+      if $2?
+        expression  = $2
+        [ key
+          format ]  = expression.split /:/
+        formatter   = formats[ format ]
+      #.......................................................................................................
+      else
+        expression  = key = $3
+        formatter   = null
+      #.......................................................................................................
+      value = data[ key ]
+      throw new Error "unknown key #{rpr key}" if value is undefined
+      value = formatter value if formatter?
+      value = rpr value unless TYPES.isa_text value
+      return $1 + value
+
+#-----------------------------------------------------------------------------------------------------------
+### TAINT use options argument ###
+_fill_in_get_matcher = ( activator, opener, closer, seperator, escaper ) ->
+  activator  ?= '$'
+  opener     ?= '{'
+  closer     ?= '}'
+  seperator  ?= ':'
+  escaper    ?= '\\'
+  #.........................................................................................................
+  activator   = BAP.escape_regex activator
+  opener      = BAP.escape_regex opener
+  closer      = BAP.escape_regex closer
+  seperator   = BAP.escape_regex seperator
+  escaper     = BAP.escape_regex escaper
+  #.........................................................................................................
+  return ///
+    ( [^#{escaper}] | ^ )
+    #{activator}
+    (?:
+      #{opener} ( [^ #{opener}#{closer} ]* ) #{closer} |
+      ( [^#{activator}#{opener}#{closer}#{seperator}{}<>()\| \s *+.,;:!"'§$%&\/=?`´\# ]+ )
+      )
+    ///g
+
+# ///
+#   ( [^\\] | ^ )
+#   \$
+#   (?:
+#     \{ ( [^{}]* ) \} |
+#     ( [^{}<>()\| \s *+.,;:!"'§$%&\/=?`´~\# ]+ )
+#     )
+#   ///g
+
+#-----------------------------------------------------------------------------------------------------------
+@fill_in              = _fill_in_get_method _fill_in_get_matcher()
+@fill_in.get_matcher  = _fill_in_get_matcher
+
+#-----------------------------------------------------------------------------------------------------------
+### TAINT use options argument ###
+@fill_in.create = ( formats, activator, opener, closer, seperator, escaper ) ->
+  matcher = @fill_in.get_matcher activator, opener, closer, seperator, escaper
+  R       = _fill_in_get_method matcher
+  return R
+@fill_in.create = @fill_in.create.bind @
+
+
+
 
 
