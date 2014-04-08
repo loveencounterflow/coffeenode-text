@@ -3,6 +3,7 @@
 
 
 ############################################################################################################
+BAP                       = require 'coffeenode-bitsnpieces'
 TYPES                     = require 'coffeenode-types'
 TRM                       = require 'coffeenode-trm'
 rpr                       = TRM.rpr.bind TRM
@@ -333,24 +334,37 @@ log                       = TRM.log.bind TRM
 #===========================================================================================================
 # STRING INTERPOLATION
 #-----------------------------------------------------------------------------------------------------------
-_fill_in_get_method = ( matcher ) ->
-  return ( template, data, formats ) ->
+_fill_in_get_method = ( matcher, formats ) ->
+  return ( template, data_or_handler ) ->
+    #.......................................................................................................
+    if TYPES.isa_function data_or_handler
+      handler = data_or_handler
+      data    = null
+    else
+      data    = data_or_handler
+      handler = null
+    #-------------------------------------------------------------------------------------------------------
     return template.replace matcher, ( $0, $1, $2, $3 ) =>
       expression  = $2 ? $3
-      #.......................................................................................................
+      #.....................................................................................................
       if $2?
         expression  = $2
         [ key
           format ]  = expression.split /:/
-        formatter   = formats[ format ]
-      #.......................................................................................................
+      #.....................................................................................................
       else
         expression  = key = $3
         formatter   = null
-      #.......................................................................................................
+      #.....................................................................................................
+      return handler null, key, format if handler?
+      #.....................................................................................................
       value = data[ key ]
       throw new Error "unknown key #{rpr key}" if value is undefined
-      value = formatter value if formatter?
+      if format?
+        formatter = formats[ format ]
+        throw new Error "unknown format #{rpr format}" unless format?
+        value     = formatter value
+      #.....................................................................................................
       value = rpr value unless TYPES.isa_text value
       return $1 + value
 
@@ -388,8 +402,14 @@ _fill_in_get_matcher = ( activator, opener, closer, seperator, escaper ) ->
 #   ///g
 
 #-----------------------------------------------------------------------------------------------------------
-@fill_in              = _fill_in_get_method _fill_in_get_matcher()
+_fill_in_default_formats =
+  'quoted': ( value ) ->
+    return '"' + ( if TYPES.isa_text value then value else rpr value ) + '"'
+
+#-----------------------------------------------------------------------------------------------------------
+@fill_in              = _fill_in_get_method _fill_in_get_matcher(), _fill_in_default_formats
 @fill_in.get_matcher  = _fill_in_get_matcher
+@fill_in.formats      = _fill_in_default_formats
 
 #-----------------------------------------------------------------------------------------------------------
 ### TAINT use options argument ###
