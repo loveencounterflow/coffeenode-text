@@ -78,11 +78,19 @@
         
         <li><a href="#this.shuffle">this.shuffle</a></li>
         
+        <li><a href="#this.list_of_unique_chrs">this.list_of_unique_chrs</a></li>
+        
         <li><a href="#this.validate_is_nonempty_text">this.validate_is_nonempty_text</a></li>
         
         <li><a href="#this.validate_is_word">this.validate_is_word</a></li>
         
+        <li><a href="#this._fill_in_get_method">this._fill_in_get_method</a></li>
+        
+        <li><a href="#this._fill_in_get_matcher">this._fill_in_get_matcher</a></li>
+        
         <li><a href="#this.fill_in.create">this.fill_in.create</a></li>
+        
+        <li><a href="#this.fill_in.container">this.fill_in.container</a></li>
         
       </ul>
       
@@ -166,7 +174,14 @@
         
         <div class="function">
           <div class="header">
-            <a id="this.split"><h3>this.split(me, probe)</h3></a>
+            <a id="this.split"><h3>this.split(me, splitter)</h3></a>
+          </div>
+          
+          <div>
+            <p> Given a text (<code>me</code>) and a <code>splitter</code> (which may be a text or a RegEx), return the result of doing the
+JS String method <code>me.split splitter</code>. However, when <code>splitter</code> is not defined, return a list of characters
+in the text, respecting Unicode surrogate pairs. </p>
+
           </div>
           
         </div>
@@ -324,6 +339,20 @@ for Unix, Windows, and MacOS systems (namely, <code>\\n</code>, <code>\\r\\n</co
         
         <div class="function">
           <div class="header">
+            <a id="this.list_of_unique_chrs"><h3>this.list_of_unique_chrs(me)</h3></a>
+          </div>
+          
+          <div>
+            <p> Given a text, return a list of all unique characters in the text. The implementation uses <code>TEXT.split</code>
+to obtain the characters, which means that it respects Unicode surrogate pairs. The characters will appear
+in the order they appear in the original text. </p>
+
+          </div>
+          
+        </div>
+        
+        <div class="function">
+          <div class="header">
             <a id="this.validate_is_nonempty_text"><h3>this.validate_is_nonempty_text(me)</h3></a>
           </div>
           
@@ -338,26 +367,38 @@ for Unix, Windows, and MacOS systems (namely, <code>\\n</code>, <code>\\r\\n</co
         
         <div class="function">
           <div class="header">
-            <a id="this.fill_in.create"><h3>this.fill_in.create(formats, activator, opener, closer, seperator, escaper)</h3></a>
+            <a id="this._fill_in_get_method"><h3>this._fill_in_get_method(matcher)</h3></a>
+          </div>
+          
+        </div>
+        
+        <div class="function">
+          <div class="header">
+            <a id="this._fill_in_get_matcher"><h3>this._fill_in_get_matcher(activator, opener, closer, seperator, escaper, forbidden)</h3></a>
+          </div>
+          
+        </div>
+        
+        <div class="function">
+          <div class="header">
+            <a id="this.fill_in.create"><h3>this.fill_in.create(activator, opener, closer, seperator, escaper)</h3></a>
+          </div>
+          
+        </div>
+        
+        <div class="function">
+          <div class="header">
+            <a id="this.fill_in.container"><h3>this.fill_in.container(container, handler)</h3></a>
+          </div>
+          
+          <div>
+            <p>TAINT does not yet support custom matchers </p>
+
           </div>
           
         </div>
         
         
-          
-          <div class="function">
-            <div class="header">
-              <a id="_fill_in_get_method"><h3>_fill_in_get_method(matcher, formats)</h3></a>
-            </div>
-            
-          </div>
-          
-          <div class="function">
-            <div class="header">
-              <a id="_fill_in_get_matcher"><h3>_fill_in_get_matcher(activator, opener, closer, seperator, escaper)</h3></a>
-            </div>
-            
-          </div>
           
         
       </div>

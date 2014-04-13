@@ -93,14 +93,17 @@ log                       = TRM.log.bind TRM
   return me.length == 0
 
 #-----------------------------------------------------------------------------------------------------------
-### TAINT.TODO will only split once when given a text probe; unexpected results when starts
-  or ends with probe; will fail with 32bit codepoints
-###
-@split = ( me, probe ) ->
-  return @words_of me unless probe?
-  # probe = if isa_regex probe then probe[ '%self' ] else probe
-  R     = me.split probe
-  return R.filter ( element ) -> return element isnt undefined
+@split = ( me, splitter ) ->
+  ### Given a text (`me`) and a `splitter` (which may be a text or a RegEx), return the result of doing the
+  JS String method `me.split splitter`. However, when `splitter` is not defined, return a list of characters
+  in the text, respecting Unicode surrogate pairs. ###
+  if splitter?
+    filter    = null
+  else
+    splitter  = /// ( (?: [  \ud800-\udbff ] [ \udc00-\udfff ] ) | . ) ///
+    filter    = ( chunk ) -> return chunk isnt ''
+  R = me.split splitter
+  return unless filter? then R else R.filter filter
 
 #-----------------------------------------------------------------------------------------------------------
 ### TAINT.TODO "might not recognize all Unicode whitespace codepoints"
@@ -314,8 +317,18 @@ log                       = TRM.log.bind TRM
 #===========================================================================================================
 # TRANSFORMATIONS
 #-----------------------------------------------------------------------------------------------------------
-# @as_set = ( me ) ->
-#   return ( require 'COFFEENODE/SET/implementation' ).new me
+@list_of_unique_chrs = ( me ) ->
+  ### Given a text, return a list of all unique characters in the text. The implementation uses `TEXT.split`
+  to obtain the characters, which means that it respects Unicode surrogate pairs. The characters will appear
+  in the order they appear in the original text. ###
+  all_chrs  = @.split me
+  R         = []
+  seen_chrs = {}
+  for chr in all_chrs
+    continue if seen_chrs[ chr ]?
+    R.push chr
+    seen_chrs[ chr ] = 1
+  return R
 
 
 #===========================================================================================================
@@ -334,7 +347,7 @@ log                       = TRM.log.bind TRM
 #===========================================================================================================
 # STRING INTERPOLATION
 #-----------------------------------------------------------------------------------------------------------
-_fill_in_get_method = ( matcher, formats ) ->
+@_fill_in_get_method = ( matcher ) ->
   return ( template, data_or_handler ) ->
     #.......................................................................................................
     if TYPES.isa_function data_or_handler
@@ -343,39 +356,30 @@ _fill_in_get_method = ( matcher, formats ) ->
     else
       data    = data_or_handler
       handler = null
-    #-------------------------------------------------------------------------------------------------------
-    return template.replace matcher, ( $0, $1, $2, $3 ) =>
-      expression  = $2 ? $3
-      #.....................................................................................................
-      if $2?
-        expression  = $2
-        [ key
-          format ]  = expression.split /:/
-      #.....................................................................................................
-      else
-        expression  = key = $3
-        formatter   = null
-      #.....................................................................................................
-      return handler null, key, format if handler?
-      #.....................................................................................................
-      value = data[ key ]
-      throw new Error "unknown key #{rpr key}" if value is undefined
-      if format?
-        formatter = formats[ format ]
-        throw new Error "unknown format #{rpr format}" unless format?
-        value     = formatter value
-      #.....................................................................................................
-      value = rpr value unless TYPES.isa_text value
-      return $1 + value
+    #---------------------------------------------------------------------------------------------------
+    R = template.replace matcher, ( ignored, prefix, markup, bare, bracketed, tail ) =>
+      name = bare ? bracketed
+      return handler null, name if handler?
+      name = '/' + name unless name[ 0 ] is '/'
+      [ container
+        key
+        new_value ] = BAP.container_and_facet_from_locator data, name
+      return prefix + ( if TYPES.isa_text new_value then new_value else rpr new_value ) + tail
+    #---------------------------------------------------------------------------------------------------
+    return R
 
 #-----------------------------------------------------------------------------------------------------------
 ### TAINT use options argument ###
-_fill_in_get_matcher = ( activator, opener, closer, seperator, escaper ) ->
+@_fill_in_get_matcher = ( activator, opener, closer, seperator, escaper, forbidden ) ->
   activator  ?= '$'
   opener     ?= '{'
   closer     ?= '}'
   seperator  ?= ':'
   escaper    ?= '\\'
+  forbidden  ?= """{}<>()|*+.,;:!"'$%&/=?`´#"""
+  #.........................................................................................................
+  forbidden   = @list_of_unique_chrs activator + opener + closer + seperator + escaper + forbidden
+  forbidden   = ( BAP.escape_regex forbidden.join '' ) + '\\s'
   #.........................................................................................................
   activator   = BAP.escape_regex activator
   opener      = BAP.escape_regex opener
@@ -385,41 +389,73 @@ _fill_in_get_matcher = ( activator, opener, closer, seperator, escaper ) ->
   #.........................................................................................................
   return ///
     ( [^#{escaper}] | ^ )
-    #{activator}
-    (?:
-      #{opener} ( [^ #{opener}#{closer} ]* ) #{closer} |
-      ( [^#{activator}#{opener}#{closer}#{seperator}{}<>()\| \s *+.,;:!"'§$%&\/=?`´\# ]+ )
+    (
+      #{activator}
+      (?:
+        ( [^ #{forbidden} ]+ )
+        |
+        #{opener}
+        (
+          #{escaper}#{activator}
+          |
+          #{escaper}#{opener}
+          |
+          #{escaper}#{closer}
+          |
+          [^ #{activator}#{opener}#{closer} ]+ ) #{closer}
+          )
       )
-    ///g
-
-# ///
-#   ( [^\\] | ^ )
-#   \$
-#   (?:
-#     \{ ( [^{}]* ) \} |
-#     ( [^{}<>()\| \s *+.,;:!"'§$%&\/=?`´~\# ]+ )
-#     )
-#   ///g
+      ( [^ #{activator} ]* ) $
+    ///
 
 #-----------------------------------------------------------------------------------------------------------
-_fill_in_default_formats =
-  'quoted': ( value ) ->
-    return '"' + ( if TYPES.isa_text value then value else rpr value ) + '"'
-
-#-----------------------------------------------------------------------------------------------------------
-@fill_in              = _fill_in_get_method _fill_in_get_matcher(), _fill_in_default_formats
-@fill_in.get_matcher  = _fill_in_get_matcher
-@fill_in.formats      = _fill_in_default_formats
+_fill_in_matcher      = @_fill_in_get_matcher()
+@fill_in              = @_fill_in_get_method _fill_in_matcher
+@fill_in.matcher      = _fill_in_matcher
+@fill_in.get_matcher  = @_fill_in_get_matcher.bind @
 
 #-----------------------------------------------------------------------------------------------------------
 ### TAINT use options argument ###
-@fill_in.create = ( formats, activator, opener, closer, seperator, escaper ) ->
+@fill_in.create = ( activator, opener, closer, seperator, escaper ) ->
   matcher = @fill_in.get_matcher activator, opener, closer, seperator, escaper
   R       = _fill_in_get_method matcher
   return R
 @fill_in.create = @fill_in.create.bind @
 
-
+#-----------------------------------------------------------------------------------------------------------
+@fill_in.container = ( container, handler ) ->
+  ### TAINT does not yet support custom matchers ###
+  # switch arity = arguments.length
+  #   when 2
+  #.........................................................................................................
+  errors = null
+  loop
+    change_count = 0
+    #-------------------------------------------------------------------------------------------------------
+    BAP.walk_containers_crumbs_and_values container, ( error, sub_container, crumbs, old_value ) =>
+      throw error if error?
+      ### TAINT call handler on termination? ###
+      return if crumbs is null
+      return unless TYPES.isa_text old_value
+      does_match  = @fill_in.matcher.test old_value
+      new_value   = @fill_in old_value, handler ? container
+      if does_match
+        if old_value is new_value
+          locator   = '/' + crumbs.join '/'
+          message   = "* unable to resolve #{locator}: #{rpr old_value} (circular reference?)"
+          ( errors  = errors ? {} )[ message ] = 1
+        else
+          [ ..., key, ]         = crumbs
+          sub_container[ key ]  = new_value
+          change_count += 1
+    #-------------------------------------------------------------------------------------------------------
+    break if change_count is 0
+  #.........................................................................................................
+  if errors?
+    throw new Error '\nerrors have occurred:\n' + ( ( m for m of errors ).sort().join '\n' ) + '\n'
+  ### TAINT should be calling handler on error ###
+  return container
+@fill_in.container = @fill_in.container.bind @
 
 
 
