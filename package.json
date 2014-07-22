@@ -1,6 +1,6 @@
 {
   "name": "coffeenode-text",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Text (string) processing stuff",
   "main": "./lib/main.js",
   "scripts": {
