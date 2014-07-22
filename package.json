@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/wolfganggzde/gemini.git"
+    "url": "https://github.com/loveencounterflow/coffeenode-text"
   },
   "dependencies": {
     "coffee-script": "~1.7.1",

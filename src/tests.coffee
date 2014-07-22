@@ -28,36 +28,6 @@ assert                    = require 'assert'
   assert.deepEqual ( TEXT.lines_of 'a\u0085b\u2028c\u2029d' ), [ 'a', 'b', 'c', 'd' ]
 
 
-throw new Error "work in progress"
-############################################################################################################
-templates = [
-  "helo name"
-  "helo ${name}"
-  "helo \\${name}"
-  "helo ${{name}}"
-  "helo ${name:quoted}"
-  "helo $name:quoted"
-  "helo $name!"
-  "helo +name!"
-  "helo +(name:quoted)!"
-  "helo !+name!"
-  "helo !+(name:quoted)!"
-  ]
-
-data =
-  'name':   'Jim'
-formats =
-  'quoted': ( text ) -> return '"' + text + '"'
-
-for template in templates
-  log ( TRM.green 'A' ), ( TRM.grey template ), ( TRM.gold @fill_in template, data, formats )
-
-custom_fill_in = @fill_in.create null, '+', '(', ')', '~', '!'
-for template in templates
-  log ( TRM.red 'B' ), ( TRM.grey template ), ( TRM.gold custom_fill_in template, data, formats )
-
-
-
 
 
 

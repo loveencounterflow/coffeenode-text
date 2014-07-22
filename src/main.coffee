@@ -15,6 +15,21 @@ log                       = TRM.log.bind TRM
 
 #-----------------------------------------------------------------------------------------------------------
 @repeat = ( me, count ) ->
+  ### TAINT consider to replace with the following by Kris Kowal, Steven Levithan
+  (see http://blog.stevenlevithan.com/archives/fast-string-multiply):
+
+  ````javascript
+  function mul4 (str, num) {
+    var acc = [];
+    for (var i = 0; (1 << i) <= num; i++) {
+      if ((1 << i) & num)
+        acc.push(str);
+      str += str;
+    }
+    return acc.join("");
+  }
+  ````
+  ###
   return ( new Array count + 1 ).join me
 
 #-----------------------------------------------------------------------------------------------------------
@@ -342,120 +357,4 @@ log                       = TRM.log.bind TRM
 @validate_is_word = ( me ) ->
   @validate_is_nonempty_text me
   unless ( me.match /^\S+$/ )? then throw new Error "expected a non-empty text without whitespace"
-
-
-#===========================================================================================================
-# STRING INTERPOLATION
-#-----------------------------------------------------------------------------------------------------------
-@_fill_in_get_method = ( matcher ) ->
-  return ( template, data_or_handler ) ->
-    #.......................................................................................................
-    if TYPES.isa_function data_or_handler
-      handler = data_or_handler
-      data    = null
-    else
-      data    = data_or_handler
-      handler = null
-    #---------------------------------------------------------------------------------------------------
-    R = template.replace matcher, ( ignored, prefix, markup, bare, bracketed, tail ) =>
-      name = bare ? bracketed
-      return handler null, name if handler?
-      name = '/' + name unless name[ 0 ] is '/'
-      [ container
-        key
-        new_value ] = BAP.container_and_facet_from_locator data, name
-      return prefix + ( if TYPES.isa_text new_value then new_value else rpr new_value ) + tail
-    #---------------------------------------------------------------------------------------------------
-    return R
-
-#-----------------------------------------------------------------------------------------------------------
-### TAINT use options argument ###
-@_fill_in_get_matcher = ( activator, opener, closer, seperator, escaper, forbidden ) ->
-  activator  ?= '$'
-  opener     ?= '{'
-  closer     ?= '}'
-  seperator  ?= ':'
-  escaper    ?= '\\'
-  forbidden  ?= """{}<>()|*+.,;:!"'$%&/=?`´#"""
-  #.........................................................................................................
-  forbidden   = @list_of_unique_chrs activator + opener + closer + seperator + escaper + forbidden
-  forbidden   = ( BAP.escape_regex forbidden.join '' ) + '\\s'
-  #.........................................................................................................
-  activator   = BAP.escape_regex activator
-  opener      = BAP.escape_regex opener
-  closer      = BAP.escape_regex closer
-  seperator   = BAP.escape_regex seperator
-  escaper     = BAP.escape_regex escaper
-  #.........................................................................................................
-  return ///
-    ( [^#{escaper}] | ^ )
-    (
-      #{activator}
-      (?:
-        ( [^ #{forbidden} ]+ )
-        |
-        #{opener}
-        (
-          #{escaper}#{activator}
-          |
-          #{escaper}#{opener}
-          |
-          #{escaper}#{closer}
-          |
-          [^ #{activator}#{opener}#{closer} ]+ ) #{closer}
-          )
-      )
-      ( [^ #{activator} ]* ) $
-    ///
-
-#-----------------------------------------------------------------------------------------------------------
-_fill_in_matcher      = @_fill_in_get_matcher()
-@fill_in              = @_fill_in_get_method _fill_in_matcher
-@fill_in.matcher      = _fill_in_matcher
-@fill_in.get_matcher  = @_fill_in_get_matcher.bind @
-
-#-----------------------------------------------------------------------------------------------------------
-### TAINT use options argument ###
-@fill_in.create = ( activator, opener, closer, seperator, escaper ) ->
-  matcher = @fill_in.get_matcher activator, opener, closer, seperator, escaper
-  R       = _fill_in_get_method matcher
-  return R
-@fill_in.create = @fill_in.create.bind @
-
-#-----------------------------------------------------------------------------------------------------------
-@fill_in.container = ( container, handler ) ->
-  ### TAINT does not yet support custom matchers ###
-  # switch arity = arguments.length
-  #   when 2
-  #.........................................................................................................
-  errors = null
-  loop
-    change_count = 0
-    #-------------------------------------------------------------------------------------------------------
-    BAP.walk_containers_crumbs_and_values container, ( error, sub_container, crumbs, old_value ) =>
-      throw error if error?
-      ### TAINT call handler on termination? ###
-      return if crumbs is null
-      return unless TYPES.isa_text old_value
-      does_match  = @fill_in.matcher.test old_value
-      new_value   = @fill_in old_value, handler ? container
-      if does_match
-        if old_value is new_value
-          locator   = '/' + crumbs.join '/'
-          message   = "* unable to resolve #{locator}: #{rpr old_value} (circular reference?)"
-          ( errors  = errors ? {} )[ message ] = 1
-        else
-          [ ..., key, ]         = crumbs
-          sub_container[ key ]  = new_value
-          change_count += 1
-    #-------------------------------------------------------------------------------------------------------
-    break if change_count is 0
-  #.........................................................................................................
-  if errors?
-    throw new Error '\nerrors have occurred:\n' + ( ( m for m of errors ).sort().join '\n' ) + '\n'
-  ### TAINT should be calling handler on error ###
-  return container
-@fill_in.container = @fill_in.container.bind @
-
-
 

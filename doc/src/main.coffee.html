@@ -84,14 +84,6 @@
         
         <li><a href="#this.validate_is_word">this.validate_is_word</a></li>
         
-        <li><a href="#this._fill_in_get_method">this._fill_in_get_method</a></li>
-        
-        <li><a href="#this._fill_in_get_matcher">this._fill_in_get_matcher</a></li>
-        
-        <li><a href="#this.fill_in.create">this.fill_in.create</a></li>
-        
-        <li><a href="#this.fill_in.container">this.fill_in.container</a></li>
-        
       </ul>
       
     </div>
@@ -105,6 +97,22 @@
         <div class="function">
           <div class="header">
             <a id="this.repeat"><h3>this.repeat(me, count)</h3></a>
+          </div>
+          
+          <div>
+            <p> TAINT consider to replace with the following by Kris Kowal, Steven Levithan
+(see <a href="http://blog.stevenlevithan.com/archives/fast-string-multiply">http://blog.stevenlevithan.com/archives/fast-string-multiply</a>):</p>
+<pre><code class="lang-javascript"><span class="keyword">function</span> mul4 (str, num) {
+  <span class="keyword">var</span> acc = [];
+  <span class="keyword">for</span> (<span class="keyword">var</span> i = <span class="number">0</span>; (<span class="number">1</span> &lt;&lt; i) &lt;= num; i++) {
+    <span class="keyword">if</span> ((<span class="number">1</span> &lt;&lt; i) &amp; num)
+      acc.push(str);
+    str += str;
+  }
+  <span class="keyword">return</span> acc.join(<span class="string">""</span>);
+}
+</code></pre>
+
           </div>
           
         </div>
@@ -361,39 +369,6 @@ in the order they appear in the original text. </p>
         <div class="function">
           <div class="header">
             <a id="this.validate_is_word"><h3>this.validate_is_word(me)</h3></a>
-          </div>
-          
-        </div>
-        
-        <div class="function">
-          <div class="header">
-            <a id="this._fill_in_get_method"><h3>this._fill_in_get_method(matcher)</h3></a>
-          </div>
-          
-        </div>
-        
-        <div class="function">
-          <div class="header">
-            <a id="this._fill_in_get_matcher"><h3>this._fill_in_get_matcher(activator, opener, closer, seperator, escaper, forbidden)</h3></a>
-          </div>
-          
-        </div>
-        
-        <div class="function">
-          <div class="header">
-            <a id="this.fill_in.create"><h3>this.fill_in.create(activator, opener, closer, seperator, escaper)</h3></a>
-          </div>
-          
-        </div>
-        
-        <div class="function">
-          <div class="header">
-            <a id="this.fill_in.container"><h3>this.fill_in.container(container, handler)</h3></a>
-          </div>
-          
-          <div>
-            <p>TAINT does not yet support custom matchers </p>
-
           </div>
           
         </div>
