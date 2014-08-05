@@ -12,8 +12,9 @@
   },
   "dependencies": {
     "coffee-script": "~1.7.1",
-    "coffeenode-types": "~0.1.0",
-    "coffeenode-trm": "~0.1.6"
+    "coffeenode-bitsnpieces": "0.0.23",
+    "coffeenode-trm": "~0.1.6",
+    "coffeenode-types": "~0.1.0"
   },
   "author": "",
   "license": "BSD",
