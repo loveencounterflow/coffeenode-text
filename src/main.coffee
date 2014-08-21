@@ -184,6 +184,19 @@ log                       = TRM.log.bind TRM
 #     #.........................................................................................................
 #     return R
 
+
+#-----------------------------------------------------------------------------------------------------------
+@truncate = ( text, width = 20, ellipsis = '⋯' ) ->
+  ### adapted from Google's Closure library ###
+  ### TAINT may silently fail with chrs outside the Unicode BMP ###
+  width  -= ellipsis.length
+  return text unless text.length > width
+  half    = Math.floor width / 2
+  stop    = text.length - half
+  half   += width % 2
+  text    = ( text.substring 0, half ) + ellipsis + text.substring stop
+  return text
+
 #-----------------------------------------------------------------------------------------------------------
 @flush_left = ( x, width = 25, filler = ' ' ) ->
   return @flush x, width, 'left', filler
