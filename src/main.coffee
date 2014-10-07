@@ -254,11 +254,12 @@ log                       = TRM.log.bind TRM
 
   **Implementation Note**: Implementation of asynchronous version postponed.###
   #.........................................................................................................
-  return me.split @_line_splitter unless handler?
+  return me.split @line_splitter unless handler?
   throw new Error "asynchronous TEXT.lines_of not yet supported"
 
 #-----------------------------------------------------------------------------------------------------------
-@_line_splitter = /// \r\n | [\n\v\f\r\x85\u2028\u2029] ///g
+@line_splitter                = /// \r\n | [\n\v\f\r\x85\u2028\u2029] ///g
+@line_splitter_with_newlines  = /// ( @line_splitter.pattern ) ///g
 
 
 #-----------------------------------------------------------------------------------------------------------
