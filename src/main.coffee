@@ -207,18 +207,18 @@ log                       = TRM.log.bind TRM
 
 #-----------------------------------------------------------------------------------------------------------
 @flush = ( x, width, align, filler = ' ' ) ->
-  ###Given a value, a non-negative integer ``width``, and an optional, non-empty text ``filler`` (which
+  ### Given a value, a non-negative integer ``width``, and an optional, non-empty text ``filler`` (which
   defaults to a single space), return a string that starts with the text (or the text of the representation
   of the value), and is padded with as many fillers as needed to make the string ``width`` characters long.
   If ``width`` is zero or smaller than the length of the text, the text is simply returned as-is. No
-  clipping of text is ever done.###
+  clipping of text is ever done. ###
   #.........................................................................................................
   unless align == 'left' or align == 'right'
     throw new Error "expected ``left`` or ``right`` for ``align``, got #{rpr align}"
   #.........................................................................................................
   x                 = rpr x unless TYPES.isa_text x
   filler_length     = filler.length
-  text_length       = x.length
+  text_length       = if /[\ud800-\udbff]/.test text then ( @split text ).length else x.length
   #.........................................................................................................
   return x if text_length >= width
   padding = @repeat filler, width - text_length
@@ -259,7 +259,7 @@ log                       = TRM.log.bind TRM
 
 #-----------------------------------------------------------------------------------------------------------
 @line_splitter                = /// \r\n | [\n\v\f\r\x85\u2028\u2029] ///g
-@line_splitter_with_newlines  = /// ( @line_splitter.pattern ) ///g
+@line_splitter_with_newlines  = /// ( #{@line_splitter.source} ) ///g
 
 
 #-----------------------------------------------------------------------------------------------------------
