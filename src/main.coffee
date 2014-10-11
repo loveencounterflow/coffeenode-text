@@ -218,7 +218,7 @@ log                       = TRM.log.bind TRM
   #.........................................................................................................
   x                 = rpr x unless TYPES.isa_text x
   filler_length     = filler.length
-  text_length       = if /[\ud800-\udbff]/.test text then ( @split text ).length else x.length
+  text_length       = if /[\ud800-\udbff]/.test x then ( @split x ).length else x.length
   #.........................................................................................................
   return x if text_length >= width
   padding = @repeat filler, width - text_length
